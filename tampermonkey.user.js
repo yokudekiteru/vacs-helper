@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         VACS Helper
 // @namespace    http://tampermonkey.net/
-// @version      0.1.1
+// @version      0.1.2
 // @description  try to take over the world!
 // @author       You
 // @match        https://vacs.ntv.co.jp/*
@@ -87,25 +87,7 @@ tr.toggler.shown td button.show {
     }
   }
 
-  const clipRowToggleButtonOnClick = function(ev) {
-    const tr = ev.target.parentNode.parentNode;
-    loadClipRowState();
-    if (clipRowState[tr.dataset.clipId] !== 'h') {
-      hideClipRow(tr);
-    } else {
-      showClipRow(tr);
-    }
-    saveClipRowState();
-  }
-
-  const observer = new MutationObserver(function() {
-    document.querySelectorAll('.card.folder').forEach(function(el) {
-      el.style.height = 'inherit';
-    });
-    document.querySelectorAll('.table1.b-table-sticky-header').forEach(function(el) {
-      el.style.maxHeight = '100%';
-    });
-    if (location.href.indexOf('/clip/') < 0) return;
+  const refreshClipRows = function() {
     loadClipRowState();
     document.querySelectorAll('tbody tr').forEach(function(trEl) {
       const tdList = trEl.querySelectorAll('td');
@@ -137,6 +119,29 @@ tr.toggler.shown td button.show {
       }
       initClipRow(trEl);
     });
+  }
+
+  const clipRowToggleButtonOnClick = function(ev) {
+    const tr = ev.target.parentNode.parentNode;
+    loadClipRowState();
+    if (clipRowState[tr.dataset.clipId] !== 'h') {
+      hideClipRow(tr);
+    } else {
+      showClipRow(tr);
+    }
+    saveClipRowState();
+    refreshClipRows();
+  }
+
+  const observer = new MutationObserver(function() {
+    document.querySelectorAll('.card.folder').forEach(function(el) {
+      el.style.height = 'inherit';
+    });
+    document.querySelectorAll('.table1.b-table-sticky-header').forEach(function(el) {
+      el.style.maxHeight = '100%';
+    });
+    if (location.href.indexOf('/clip/') < 0) return;
+    refreshClipRows();
   });
   observer.observe(document, {childList: true, subtree: true});
 
