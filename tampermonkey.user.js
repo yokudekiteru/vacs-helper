@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         VACS Helper
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.1.1
 // @description  try to take over the world!
 // @author       You
 // @match        https://vacs.ntv.co.jp/*
@@ -45,22 +45,42 @@ tr.toggler.shown td button.show {
 `));
   document.getElementsByTagName('head')[0].appendChild(userStyleEl);
 
-  const clipRowState = {}
+  // localStorageの容量制限を超えないよう、VACS保存期間を超過したクリップの非表示情報は除去する
+  const aDay = new Date();
+  aDay.setDate(aDay.getDate() - 8); // VACSのクリップ保存期間は7日間だが1日余裕を持つ
+  const aDayStr = '' + aDay.getFullYear() + ('00' + (aDay.getMonth() + 1)).slice(-2) + ('00' + aDay.getDate()).slice(-2);
+
+  let clipRowState = null;
+
+  const loadClipRowState = function() {
+    clipRowState = localStorage.clipRowState === undefined ? {} : JSON.parse(localStorage.clipRowState);
+  }
+
+  const saveClipRowState = function() {
+    if (clipRowState !== null) {
+      Object.entries(clipRowState).forEach(function([k, v]) {
+        if (v !== 'h' || k.substring(0, 8) < aDayStr) {
+          delete clipRowState[k];
+        }
+      });
+      localStorage.clipRowState = JSON.stringify(clipRowState);
+    }
+  }
 
   const hideClipRow = function(tr) {
     tr.classList.remove('shown');
     tr.classList.add('hidden');
-    clipRowState[tr.dataset.clipId] = 'hidden';
+    clipRowState[tr.dataset.clipId] = 'h';
   }
 
   const showClipRow = function(tr) {
     tr.classList.remove('hidden');
     tr.classList.add('shown');
-    clipRowState[tr.dataset.clipId] = 'shown';
+    clipRowState[tr.dataset.clipId] = 's';
   }
 
   const initClipRow = function(tr) {
-    if (clipRowState[tr.dataset.clipId] === 'hidden') {
+    if (clipRowState[tr.dataset.clipId] === 'h') {
       hideClipRow(tr);
     } else {
       showClipRow(tr);
@@ -69,11 +89,13 @@ tr.toggler.shown td button.show {
 
   const clipRowToggleButtonOnClick = function(ev) {
     const tr = ev.target.parentNode.parentNode;
-    if (clipRowState[tr.dataset.clipId] !== 'hidden') {
+    loadClipRowState();
+    if (clipRowState[tr.dataset.clipId] !== 'h') {
       hideClipRow(tr);
     } else {
       showClipRow(tr);
     }
+    saveClipRowState();
   }
 
   const observer = new MutationObserver(function() {
@@ -84,6 +106,7 @@ tr.toggler.shown td button.show {
       el.style.maxHeight = '100%';
     });
     if (location.href.indexOf('/clip/') < 0) return;
+    loadClipRowState();
     document.querySelectorAll('tbody tr').forEach(function(trEl) {
       const tdList = trEl.querySelectorAll('td');
       const clipId = tdList[2].innerText;
