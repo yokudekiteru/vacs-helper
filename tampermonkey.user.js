@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         VACS Helper
 // @namespace    http://tampermonkey.net/
-// @version      0.1.2
+// @version      0.1.3
 // @description  try to take over the world!
 // @author       You
 // @match        https://vacs.ntv.co.jp/*
@@ -133,6 +133,16 @@ tr.toggler.shown td button.show {
     refreshClipRows();
   }
 
+  const findElByInnerText = function(selector, innerText) {
+    const els = document.querySelectorAll(selector);
+    for (let i = 0; i < els.length; i++) {
+      if (els[i].innerText === innerText) {
+        return els[i];
+      }
+    }
+    return null;
+  }
+
   const observer = new MutationObserver(function() {
     document.querySelectorAll('.card.folder').forEach(function(el) {
       el.style.height = 'inherit';
@@ -140,6 +150,28 @@ tr.toggler.shown td button.show {
     document.querySelectorAll('.table1.b-table-sticky-header').forEach(function(el) {
       el.style.maxHeight = '100%';
     });
+    if (location.href.indexOf('/clip/movieupload') > -1) {
+      const manuscriptMatchingLegendEl = findElByInnerText('legend', '原稿マッチング');
+      if (manuscriptMatchingLegendEl === null) return;
+      const manuscriptMatchingEl = manuscriptMatchingLegendEl.parentNode.querySelector('select');
+      if (manuscriptMatchingEl && manuscriptMatchingEl.value === '') {
+        manuscriptMatchingEl.value = false;
+        manuscriptMatchingEl.dispatchEvent(new Event('change'));
+      }
+      const uploadCompletedDialog = document.querySelector('[id^="modalUploadCompleted"].modal-content');
+      if (uploadCompletedDialog) {
+        const uploadOkButton = uploadCompletedDialog.querySelector('footer button');
+        if (uploadOkButton.dataset.modified !== true) {
+          uploadOkButton.dataset.modified = true;
+          uploadOkButton.addEventListener('click', function(el) {
+            const procButton = findElByInnerText('button', '処理開始');
+            if (procButton) {
+              procButton.click();
+            }
+          });
+        }
+      }
+    }
     if (location.href.indexOf('/clip/') < 0) return;
     refreshClipRows();
   });
