@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         VACS Helper
 // @namespace    http://tampermonkey.net/
-// @version      0.2.0
+// @version      0.2.1
 // @description  try to take over the world!
 // @author       You
 // @match        https://vacs.ntv.co.jp/*
@@ -13,7 +13,7 @@
   'use strict';
 
   const YAHOO_DEFAULT_BITRATE = 0.872;
-  const YAHOO_MAX_MP4_SIZE = 450.0;
+  const YAHOO_MAX_MP4_SIZE = 449.0;
 
   const userStyleEl = document.createElement('style');
   userStyleEl.appendChild(document.createTextNode(`
@@ -175,28 +175,46 @@ tr.toggler.shown td button.show {
         }
       }
     }
-    if (location.href.indexOf('/clip/deriver/') > -1) {
+    const modalDialog = document.querySelector('.modal-dialog');
+    if (location.href.indexOf('/clip/deriver/') > -1
+       && modalDialog !== null && modalDialog.innerText.indexOf('クリップ区間は以下のように設定されています') > -1
+       && document.querySelector('body.modal-open') !== null /* モーダルが表示された段階で実行 */) {
       const yahooLabel = findElByInnerText('.custom-control-label', 'TYPELINE(Yahoo)');
       if (yahooLabel.dataset.betterBitrate === undefined) {
         const yahooCheck = document.getElementById(yahooLabel.htmlFor);
         if (yahooCheck === null || !yahooCheck.checked) return;
-        let videoStartDate = null;
-        let videoEndDate = null;
-        const allLabel = document.querySelectorAll('label');
-        for (let i = 0; i < allLabel.length; i++) {
-          const labelText = allLabel[i].innerText.trim();
-          if (labelText.length === 41) {
-            videoStartDate = new Date(labelText.substring(0, 19));
-            videoEndDate = new Date(labelText.slice(-19));
-            break;
-          }
+        let videoDuration = 0;
+        const clipRanges = modalDialog.querySelectorAll('li');
+        clipRanges.forEach(function(clipRange) {
+          const aClipRange = clipRange.innerText.split('~');
+          const aClipRangeTo = aClipRange[1].trim();
+          let aClipRangeToSec = 1 * aClipRangeTo.split('.')[1]; // まずはミリ秒を変数に保持
+          let aClipRangeToHMSLevel = 1;
+          aClipRangeTo.split('.')[0].split(':').reverse().forEach(function(hms) {
+            aClipRangeToSec += (aClipRangeToHMSLevel * hms);
+            aClipRangeToHMSLevel *= 60;
+          });
+          const aClipRangeFrom = aClipRange[0].trim();
+          let aClipRangeFromSec = 1 * aClipRangeFrom.split('.')[1]; // まずはミリ秒を変数に保持
+          let aClipRangeFromHMSLevel = 1;
+          aClipRangeFrom.split('.')[0].split(':').reverse().forEach(function(hms) {
+            aClipRangeFromSec += (aClipRangeFromHMSLevel * hms);
+            aClipRangeFromHMSLevel *= 60;
+          });
+         videoDuration += (aClipRangeToSec - aClipRangeFromSec);
+        });
+        if (videoDuration === 0) {
+          clipRanges.forEach(function(el) { el.style.backgroundColor = 'yellow'; });
+          alert('クリップ尺が正しく取得できませんでした、ダイアログが開いたら「キャンセル」し、もう一度「送信」ボタンを押してください');
+          return;
         }
-        const videoDuration = (videoEndDate.getTime() - videoStartDate.getTime()) / 1000;
+        console.log('成果物クリップ尺(秒): ' + videoDuration);
         const yahooMp4Size = YAHOO_DEFAULT_BITRATE / 8 * videoDuration;
         console.log('YahooMP4想定サイズ: ' + yahooMp4Size + 'MB');
         if (YAHOO_MAX_MP4_SIZE < yahooMp4Size) {
           alert("Yahoo向けmp4のサイズが450MBを超過するため推奨ビットレートに変更します");
           const betterBitrate = Math.floor(YAHOO_MAX_MP4_SIZE * 8 / videoDuration * 1000);
+          console.log('修正後YahooMP4想定サイズ: ' + (betterBitrate / 1000 / 8 * videoDuration) + 'MB');
           yahooLabel.dataset.betterBitrate = betterBitrate;
           console.log('Yahoo向けビットレート変更画面へ遷移');
           yahooLabel.parentNode.parentNode.parentNode.querySelector('button').click();
@@ -205,7 +223,6 @@ tr.toggler.shown td button.show {
           yahooLabel.dataset.betterBitrate = 'applied';
         }
       } else if (yahooLabel.dataset.betterBitrate !== 'applied') {
-        console.log('Yahoo向けビットレートを推奨値に書きかえ開始');
         const yahooCustomizeLabel = findElByInnerText('.card.second label', 'TYPELINE(Yahoo)');
         if (yahooCustomizeLabel === null) return;
         const bitrateLegend = findElByInnerText('legend', 'Bitrate(kbps)');
@@ -215,7 +232,6 @@ tr.toggler.shown td button.show {
         bitrateInput.value = yahooLabel.dataset.betterBitrate;
         bitrateInput.dispatchEvent(new Event('change'));
         yahooLabel.dataset.betterBitrate = 'applied';
-        console.log('Yahoo向けビットレートを推奨値に書きかえ完了');
         alert("Yahoo向けmp4のビットレートを " + bitrateInput.value + ' kbpsに変更しました');
       }
     }
