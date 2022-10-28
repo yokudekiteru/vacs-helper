@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         VACS Helper
 // @namespace    http://tampermonkey.net/
-// @version      0.2.1
+// @version      0.2.2
 // @description  try to take over the world!
 // @author       You
 // @match        https://vacs.ntv.co.jp/*
@@ -13,7 +13,7 @@
   'use strict';
 
   const YAHOO_DEFAULT_BITRATE = 0.872;
-  const YAHOO_MAX_MP4_SIZE = 449.0;
+  const YAHOO_MAX_MP4_SIZE = 260.0;
 
   const userStyleEl = document.createElement('style');
   userStyleEl.appendChild(document.createTextNode(`
@@ -212,7 +212,7 @@ tr.toggler.shown td button.show {
         const yahooMp4Size = YAHOO_DEFAULT_BITRATE / 8 * videoDuration;
         console.log('YahooMP4想定サイズ: ' + yahooMp4Size + 'MB');
         if (YAHOO_MAX_MP4_SIZE < yahooMp4Size) {
-          alert("Yahoo向けmp4のサイズが450MBを超過するため推奨ビットレートに変更します");
+          alert("Yahoo向けmp4のサイズが" + YAHOO_MAX_MP4_SIZE + "MBを超過するため推奨ビットレートに変更します");
           const betterBitrate = Math.floor(YAHOO_MAX_MP4_SIZE * 8 / videoDuration * 1000);
           console.log('修正後YahooMP4想定サイズ: ' + (betterBitrate / 1000 / 8 * videoDuration) + 'MB');
           yahooLabel.dataset.betterBitrate = betterBitrate;
