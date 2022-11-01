@@ -202,8 +202,6 @@ tr.toggler.shown td button.show {
             aClipRangeFromSec += (aClipRangeFromHMSLevel * hms);
             aClipRangeFromHMSLevel *= 60;
           });
-          console.log(aClipRangeToSec);
-          console.log(aClipRangeFromSec);
           videoDuration += (aClipRangeToSec - aClipRangeFromSec);
         });
         if (videoDuration === 0) {
