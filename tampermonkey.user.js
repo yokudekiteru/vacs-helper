@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         VACS Helper
 // @namespace    http://tampermonkey.net/
-// @version      0.2.4
+// @version      0.2.5
 // @description  try to take over the world!
 // @author       You
 // @match        https://vacs.ntv.co.jp/*
@@ -189,20 +189,22 @@ tr.toggler.shown td button.show {
         clipRanges.forEach(function(clipRange) {
           const aClipRange = clipRange.innerText.split('~');
           const aClipRangeTo = aClipRange[1].trim();
-          let aClipRangeToSec = 1 * aClipRangeTo.split('.')[1]; // まずはミリ秒を変数に保持
+          let aClipRangeToSec = (1 * aClipRangeTo.split('.')[1]) / 1000; // まずはミリ秒を変数に保持
           let aClipRangeToHMSLevel = 1;
           aClipRangeTo.split('.')[0].split(':').reverse().forEach(function(hms) {
             aClipRangeToSec += (aClipRangeToHMSLevel * hms);
             aClipRangeToHMSLevel *= 60;
           });
           const aClipRangeFrom = aClipRange[0].trim();
-          let aClipRangeFromSec = 1 * aClipRangeFrom.split('.')[1]; // まずはミリ秒を変数に保持
+          let aClipRangeFromSec = (1 * aClipRangeFrom.split('.')[1]) / 1000; // まずはミリ秒を変数に保持
           let aClipRangeFromHMSLevel = 1;
           aClipRangeFrom.split('.')[0].split(':').reverse().forEach(function(hms) {
             aClipRangeFromSec += (aClipRangeFromHMSLevel * hms);
             aClipRangeFromHMSLevel *= 60;
           });
-         videoDuration += (aClipRangeToSec - aClipRangeFromSec);
+          console.log(aClipRangeToSec);
+          console.log(aClipRangeFromSec);
+          videoDuration += (aClipRangeToSec - aClipRangeFromSec);
         });
         if (videoDuration === 0) {
           clipRanges.forEach(function(el) { el.style.backgroundColor = 'yellow'; });
