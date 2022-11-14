@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         VACS Helper
 // @namespace    http://tampermonkey.net/
-// @version      0.2.6
+// @version      0.2.7
 // @description  try to take over the world!
 // @author       You
 // @match        https://vacs.ntv.co.jp/*
@@ -13,7 +13,7 @@
   'use strict';
 
   const YAHOO_DEFAULT_BITRATE = 0.872;
-  const LAMBDA_MAX_MP4_SIZE = 246.0;
+  const LAMBDA_MAX_MP4_SIZE = 428.0;
   const AUDIO_BITRATE = 0.128;
 
   const userStyleEl = document.createElement('style');
@@ -162,7 +162,6 @@ tr.toggler.shown td button.show {
       const dateFromEl = document.querySelector('input[type="date"]');
       const dateFrom = new Date(dateFromEl.value);
       dateFrom.setDate(dateFrom.getDate() - 7);
-      console.log(dateFrom.toLocaleString());
       dateFromEl.value = dateFrom.getFullYear() + '-' + ('00' + (dateFrom.getMonth() + 1)).slice(-2) + '-' + ('00' + dateFrom.getDate()).slice(-2);
       const searchTextEl = document.querySelector('input[placeholder="検索"]');
       searchTextEl.value = vidParts.join('-');
@@ -217,8 +216,6 @@ tr.toggler.shown td button.show {
             aClipRangeFromSec += (aClipRangeFromHMSLevel * hms);
             aClipRangeFromHMSLevel *= 60;
           });
-          console.log(aClipRangeToSec);
-          console.log(aClipRangeFromSec);
           videoDuration += (aClipRangeToSec - aClipRangeFromSec);
         });
         if (videoDuration === 0) {
