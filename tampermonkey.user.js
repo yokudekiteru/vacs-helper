@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         VACS Helper
 // @namespace    http://tampermonkey.net/
-// @version      0.2.8
+// @version      0.2.9
 // @description  try to take over the world!
 // @author       You
 // @match        https://vacs.ntv.co.jp/*
@@ -14,6 +14,7 @@
 
   const YAHOO_DEFAULT_BITRATE = 0.872;
   const LAMBDA_MAX_MP4_SIZE = 428.0;
+  const YAHOO_MAX_MP4_SIZE = 225.0;
   const AUDIO_BITRATE = 0.128;
 
   const userStyleEl = document.createElement('style');
@@ -226,9 +227,7 @@ tr.toggler.shown td button.show {
         console.log('成果物クリップ尺(秒): ' + videoDuration);
         const yahooMp4Size = (YAHOO_DEFAULT_BITRATE + AUDIO_BITRATE) / 8 * videoDuration;
         console.log('YahooMP4想定サイズ: ' + yahooMp4Size + 'MB');
-        if (LAMBDA_MAX_MP4_SIZE < yahooMp4Size) {
-          // Yahoo向けビットレート自動調整によって長尺動画が遅れるようになった結果、Yahoo配信障害が発生
-          // 調整せず、Yahoo向け動画をTYPELINEに送らないことで全体最適を図る
+        if (YAHOO_MAX_MP4_SIZE < yahooMp4Size) {
           /*
           alert("Yahoo向けmp4のサイズが" + LAMBDA_MAX_MP4_SIZE + "MBを超過するため推奨ビットレートに変更します");
           const betterBitrate = Math.floor(LAMBDA_MAX_MP4_SIZE * 8 / videoDuration * 1000) - (AUDIO_BITRATE * 1000);
@@ -237,13 +236,15 @@ tr.toggler.shown td button.show {
           console.log('Yahoo向けビットレート変更画面へ遷移');
           yahooLabel.parentNode.parentNode.parentNode.querySelector('button').click();
           */
+          // Yahoo向けビットレート自動調整によって長尺動画が遅れるようになった結果、Yahoo配信障害が発生
+          // Yahoo向け動画をTYPELINEに送らないことで全体最適を図る
           yahooCheck.checked = false;
           yahooCheck.dispatchEvent(new Event('change'));
-          yahooLabel.dataset.betterBitrate = 'applied';
-          alert("Yahoo向けmp4のサイズが" + LAMBDA_MAX_MP4_SIZE + "MBを超過するため配信先からTYPELINE(Yahoo)を外しました");
+          //yahooLabel.dataset.betterBitrate = 'applied';
+          alert("Yahoo向けmp4のサイズが" + YAHOO_MAX_MP4_SIZE + "MBを超過するため配信先からTYPELINE(Yahoo)を外しました");
         } else {
           console.log('Yahoo向けビットレート変更不要');
-          yahooLabel.dataset.betterBitrate = 'applied';
+          //yahooLabel.dataset.betterBitrate = 'applied';
         }
       } else if (yahooLabel.dataset.betterBitrate !== 'applied') {
         /*
@@ -256,8 +257,8 @@ tr.toggler.shown td button.show {
         bitrateInput.value = yahooLabel.dataset.betterBitrate;
         bitrateInput.dispatchEvent(new Event('change'));
         alert("Yahoo向けmp4のビットレートを " + bitrateInput.value + ' kbpsに変更しました');
-        */
         yahooLabel.dataset.betterBitrate = 'applied';
+        */
       }
     }
     if (location.href.indexOf('/clip/') < 0) return;
