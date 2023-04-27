@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         VACS Helper
 // @namespace    http://tampermonkey.net/
-// @version      0.2.9
+// @version      0.3.0
 // @description  try to take over the world!
 // @author       You
 // @match        https://vacs.ntv.co.jp/*
@@ -148,6 +148,8 @@ tr.toggler.shown td button.show {
     return null;
   }
 
+  const deliverMagicFunctions = {};
+
   const observer = new MutationObserver(function() {
     document.querySelectorAll('.card.folder').forEach(function(el) {
       el.style.height = 'inherit';
@@ -182,7 +184,7 @@ tr.toggler.shown td button.show {
         const uploadOkButton = uploadCompletedDialog.querySelector('footer button');
         if (uploadOkButton.dataset.modified !== true) {
           uploadOkButton.dataset.modified = true;
-          uploadOkButton.addEventListener('click', function(el) {
+          uploadOkButton.addEventListener('click', function(ev) {
             const procButton = findElByInnerText('button', '処理開始');
             if (procButton) {
               procButton.click();
@@ -191,6 +193,7 @@ tr.toggler.shown td button.show {
         }
       }
     }
+
     const modalDialog = document.querySelector('.modal-dialog');
     if (location.href.indexOf('/clip/deriver/') > -1
        && modalDialog !== null && modalDialog.innerText.indexOf('クリップ区間は以下のように設定されています') > -1
@@ -261,6 +264,61 @@ tr.toggler.shown td button.show {
         */
       }
     }
+
+    if (location.href.indexOf('/clip/deriver/') > -1) {
+      const observeArea = findElByInnerText('header', 'クリップの送信').parentElement.querySelector('.card.second');
+      const deliverConfigObserver = new MutationObserver(function() {
+        let deliverToConfigLabel = findElByInnerText('label', '出力先 :');
+        if (deliverToConfigLabel === null) {
+          return;
+        }
+        const deliverTo = deliverToConfigLabel.parentElement.innerText.replace('出力先 :', '');
+        let volumeInput = findElByInnerText('legend', '音量増幅量(dB)');
+        if (volumeInput) {
+          volumeInput = volumeInput.parentElement.querySelector('[type="number"]');
+        }
+        if (typeof(deliverMagicFunctions[deliverTo]) === 'function' && volumeInput !== null) {
+          deliverMagicFunctions[deliverTo]();
+        }
+      });
+      deliverConfigObserver.observe(observeArea, {childList: true, subtree: true, characterData: true});
+
+      // check=trueにした送信先のパラメータ設定を自動表示する、falseにしたら設定を閉じる
+      document.querySelectorAll('[type="checkbox"]').forEach(function(el) {
+        el.deliverTo = el.parentElement.innerText;
+        if (el.dataset.magicFitted === undefined) {
+          el.dataset.magicFitted = true;
+          if (deliverMagicFunctions[el.deliverTo] === undefined) {
+            deliverMagicFunctions[el.deliverTo] = 'none';
+            if (el.deliverTo === '再編集用') {
+              deliverMagicFunctions[el.deliverTo] = function() {
+                let volumeInput = findElByInnerText('legend', '音量増幅量(dB)').parentElement.querySelector('[type="number"]');
+                if (volumeInput !== null && volumeInput.dataset.volumeConfirmed === undefined && volumeInput.value != 10) {
+                  volumeInput.dataset.volumeConfirmed = true;
+                  if (confirm('音量増幅量を10dbにしますか？')) {
+                    const volumeInput = findElByInnerText('legend', '音量増幅量(dB)').parentElement.querySelector('[type="number"]');
+                    volumeInput.value = 10;
+                    volumeInput.dispatchEvent(new Event('change'));
+                  }
+                }
+              }
+            }
+          }
+
+          el.addEventListener('change', function(ev) {
+            if (ev.target.checked) {
+              ev.target.parentElement.parentElement.parentElement.querySelector('button').click();
+            } else {
+              const closeButton = findElByInnerText('button', '閉じる');
+              if (closeButton !== null) {
+                closeButton.click();
+              }
+            }
+          });
+        }
+      });
+    }
+
     if (location.href.indexOf('/clip/') < 0) return;
     refreshClipRows();
   });
