@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         VACS Helper
 // @namespace    http://tampermonkey.net/
-// @version      0.3.0
+// @version      0.3.1
 // @description  try to take over the world!
 // @author       You
 // @match        https://vacs.ntv.co.jp/*
@@ -241,10 +241,20 @@ tr.toggler.shown td button.show {
           */
           // Yahoo向けビットレート自動調整によって長尺動画が遅れるようになった結果、Yahoo配信障害が発生
           // Yahoo向け動画をTYPELINEに送らないことで全体最適を図る
+          /*
           yahooCheck.checked = false;
           yahooCheck.dispatchEvent(new Event('change'));
           //yahooLabel.dataset.betterBitrate = 'applied';
           alert("Yahoo向けmp4のサイズが" + YAHOO_MAX_MP4_SIZE + "MBを超過するため配信先からTYPELINE(Yahoo)を外しました");
+          */
+          let videoDurationMinutes = videoDuration / 60;
+          if (confirm("30分以上の動画をYahooに配信することは推奨されません、配信先からTYPELINE(Yahoo)を外しますか？")) {
+            yahooCheck.checked = false;
+            yahooCheck.dispatchEvent(new Event('change'));
+          } else {
+            alert('VACSとTYPELINEの配信能力に余力があるときに配信することを推奨します');
+            yahooLabel.dataset.betterBitrate = 'confirmed';
+          }
         } else {
           console.log('Yahoo向けビットレート変更不要');
           //yahooLabel.dataset.betterBitrate = 'applied';
